@@ -14,10 +14,15 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-RUN chmod -R 775 storage bootstrap/cache
+RUN mkdir -p storage/framework/views \
+    storage/framework/cache \
+    storage/framework/sessions \
+    bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
 
 RUN echo 'server { listen 10000; root /var/www/html/public; index index.php index.html; location / { try_files $uri $uri/ /index.php?$query_string; } location ~ \.php$ { include fastcgi_params; fastcgi_pass 127.0.0.1:9000; fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; } }' > /etc/nginx/sites-available/default
 
 EXPOSE 10000
 
-CMD service nginx start && php-fpm
+CMD php artisan config:clear && php artisan view:clear && php artisan cache:clear && service nginx start && php-fpm
